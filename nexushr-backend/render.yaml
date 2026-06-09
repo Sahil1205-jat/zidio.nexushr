@@ -1,0 +1,53 @@
+# This file defines the services for both Staging and Production environments.
+# Render will automatically deploy the correct service based on the Git branch.
+
+services:
+  # ----------------- STAGING (TESTING) SERVICE -----------------
+  # Deploys automatically when you push to the 'develop' branch.
+  - type: web
+    name: syncwork-staging-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free # Free plan is perfect for staging
+    autoDeploy: true
+    branch: develop # Important: This service only deploys from the 'develop' branch
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: staging
+      - key: SPRING_DATASOURCE_URL
+        fromSecret:
+          name: syncwork-staging-secrets
+          key: SPRING_DATASOURCE_URL
+      - key: SPRING_MAIL_USERNAME
+        fromSecret:
+          name: syncwork-staging-secrets
+          key: SPRING_MAIL_USERNAME
+      - key: SPRING_MAIL_PASSWORD
+        fromSecret:
+          name: syncwork-staging-secrets
+          key: SPRING_MAIL_PASSWORD
+
+  # ----------------- PRODUCTION (LIVE) SERVICE -----------------
+  # Deploys automatically when you push to the 'main' branch.
+  - type: web
+    name: syncwork-prod-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter # Use a paid plan for production for better performance
+    autoDeploy: true
+    branch: main # Important: This service only deploys from the 'main' branch
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: SPRING_DATASOURCE_URL
+        fromSecret:
+          name: syncwork-prod-secrets
+          key: SPRING_DATASOURCE_URL
+      - key: SPRING_MAIL_USERNAME
+        fromSecret:
+          name: syncwork-prod-secrets
+          key: SPRING_MAIL_USERNAME
+      - key: SPRING_MAIL_PASSWORD
+        fromSecret:
+          name: syncwork-prod-secrets
+          key: SPRING_MAIL_PASSWORD

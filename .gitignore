@@ -1,0 +1,25 @@
+# Node dependencies & binaries
+nexushr-frontend/node_modules/
+nexushr-frontend/dist/
+node-v20/
+node-v22/
+
+# Maven target & build files
+nexushr-backend/target/
+nexushr-backend/.settings/
+nexushr-backend/.classpath
+nexushr-backend/.project
+
+# IDE settings
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Logs
+backend.log
+*.log
+nohup.out
