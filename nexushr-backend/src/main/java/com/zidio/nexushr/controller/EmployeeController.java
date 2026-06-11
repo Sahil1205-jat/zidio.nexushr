@@ -88,7 +88,30 @@ public class EmployeeController {
 
     // 1. Naya Employee Add karna + Welcome Email (Async)
     @PostMapping
-    public ResponseEntity<java.util.Map<String, Object>> addEmployee(@RequestBody Employee employee) {
+    public ResponseEntity<?> addEmployee(@RequestBody Employee employee) {
+        if (employee.getEmpCode() == null || employee.getEmpCode().trim().isEmpty()) {
+            return ResponseEntity.status(400).body(java.util.Map.of("error", "Employee Code is required."));
+        }
+        if (employee.getEmail() == null || employee.getEmail().trim().isEmpty()) {
+            return ResponseEntity.status(400).body(java.util.Map.of("error", "Email is required."));
+        }
+
+        String cleanEmpCode = employee.getEmpCode().trim().toUpperCase();
+        String cleanEmail = employee.getEmail().trim().toLowerCase();
+
+        if (employeeRepository.findByEmpCode(cleanEmpCode).isPresent()) {
+            return ResponseEntity.status(400).body(java.util.Map.of("error", "Employee Code '" + cleanEmpCode + "' already exists."));
+        }
+
+        boolean emailExists = employeeRepository.findAll().stream()
+                .anyMatch(emp -> emp.getEmail() != null && emp.getEmail().trim().equalsIgnoreCase(cleanEmail));
+        if (emailExists) {
+            return ResponseEntity.status(400).body(java.util.Map.of("error", "Email '" + cleanEmail + "' is already registered."));
+        }
+
+        employee.setEmpCode(cleanEmpCode);
+        employee.setEmail(cleanEmail);
+
         String randomPassword = generateRandomPassword();
         employee.setPassword(passwordEncoder.encode(randomPassword));
         Employee savedEmp = employeeRepository.save(employee);

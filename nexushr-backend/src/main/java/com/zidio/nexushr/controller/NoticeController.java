@@ -29,27 +29,29 @@ public class NoticeController {
     public Notice addNotice(@RequestBody Notice notice) {
         Notice savedNotice = noticeRepo.save(notice);
 
-        // Background mein sabko mail bhejne ka logic
-        try {
-            List<Employee> allEmployees = employeeRepo.findAll();
-            String subject = "📢 NexusHR Official Notice: " + savedNotice.getTitle();
-            String body = "Attention Team,\n\n" +
-                    "A new official update has been posted:\n\n" +
-                    "TITLE: " + savedNotice.getTitle() + "\n" +
-                    "MESSAGE: " + savedNotice.getContent() + "\n\n" +
-                    "Check your 'Notice Board' for more info.\n\n" +
-                    "Regards,\nNexusHR Management";
+        // Run the email broadcast in a background worker thread
+        java.util.concurrent.CompletableFuture.runAsync(() -> {
+            try {
+                List<Employee> allEmployees = employeeRepo.findAll();
+                String subject = "📢 NexusHR Official Notice: " + savedNotice.getTitle();
+                String body = "Attention Team,\n\n" +
+                        "A new official update has been posted:\n\n" +
+                        "TITLE: " + savedNotice.getTitle() + "\n" +
+                        "MESSAGE: " + savedNotice.getContent() + "\n\n" +
+                        "Check your 'Notice Board' for more info.\n\n" +
+                        "Regards,\nNexusHR Management";
 
-            // Loop through all employees and send email
-            for (Employee emp : allEmployees) {
-                if (emp.getEmail() != null && !emp.getEmail().isEmpty()) {
-                    emailService.sendEmail(emp.getEmail(), subject, body);
+                // Loop through all employees and send email
+                for (Employee emp : allEmployees) {
+                    if (emp.getEmail() != null && !emp.getEmail().isEmpty()) {
+                        emailService.sendEmail(emp.getEmail(), subject, body);
+                    }
                 }
+                System.out.println("✅ Global Broadcast Sent for Notice: " + savedNotice.getTitle());
+            } catch (Exception e) {
+                System.err.println("❌ Asynchronous notice email broadcast failed: " + e.getMessage());
             }
-            System.out.println("✅ Global Broadcast Sent for Notice: " + savedNotice.getTitle());
-        } catch (Exception e) {
-            System.err.println("❌ Notice saved but email broadcast failed: " + e.getMessage());
-        }
+        });
 
         return savedNotice;
     }

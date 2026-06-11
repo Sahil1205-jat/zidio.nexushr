@@ -42,7 +42,12 @@ fi
 
 # Run Vite dev server
 echo "   Vite development server launching..."
+if [ ! -d "node_modules" ]; then
+    echo "   node_modules folder not found. Installing frontend dependencies..."
+    npm install
+fi
 npm run dev
+
 
 # Cleanup backend process on exit
 cleanup() {

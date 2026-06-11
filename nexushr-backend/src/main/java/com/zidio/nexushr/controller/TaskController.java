@@ -37,23 +37,25 @@ public class TaskController {
         Task savedTask = taskRepo.save(task);
         log.info("New task created with ID: {}", savedTask.getId());
 
-        // Notify assigned employee via email
-        try {
-            employeeRepo.findByEmpCode(savedTask.getAssignedTo().trim().toUpperCase())
-                    .ifPresent(emp -> {
-                        String subject = "🚀 New Project Task: " + savedTask.getTitle();
-                        String body = "Hi " + emp.getName() + ",\n\n" +
-                                "A new task has been assigned to your profile.\n\n" +
-                                "TASK: " + savedTask.getTitle() + "\n" +
-                                "PRIORITY: " + savedTask.getPriority() + "\n" +
-                                "DEADLINE: " + savedTask.getDueDate() + "\n\n" +
-                                "Please login to NexusHR to start working on it.";
-                        emailService.sendEmail(emp.getEmail(), subject, body);
-                        log.info("Task notification sent to: {}", emp.getEmail());
-                    });
-        } catch (Exception e) {
-            log.error("Task assigned but email notification failed: {}", e.getMessage());
-        }
+        // Notify assigned employee asynchronously
+        java.util.concurrent.CompletableFuture.runAsync(() -> {
+            try {
+                employeeRepo.findByEmpCode(savedTask.getAssignedTo().trim().toUpperCase())
+                        .ifPresent(emp -> {
+                            String subject = "🚀 New Project Task: " + savedTask.getTitle();
+                            String body = "Hi " + emp.getName() + ",\n\n" +
+                                    "A new task has been assigned to your profile.\n\n" +
+                                    "TASK: " + savedTask.getTitle() + "\n" +
+                                    "PRIORITY: " + savedTask.getPriority() + "\n" +
+                                    "DEADLINE: " + savedTask.getDueDate() + "\n\n" +
+                                    "Please login to NexusHR to start working on it.";
+                            emailService.sendEmail(emp.getEmail(), subject, body);
+                            log.info("Task notification sent asynchronously to: {}", emp.getEmail());
+                        });
+            } catch (Exception e) {
+                log.error("Asynchronous task notification email failed: {}", e.getMessage());
+            }
+        });
 
         return savedTask;
     }

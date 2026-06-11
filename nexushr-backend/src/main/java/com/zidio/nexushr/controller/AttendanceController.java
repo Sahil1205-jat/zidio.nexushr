@@ -3,6 +3,7 @@ package com.zidio.nexushr.controller;
 import com.zidio.nexushr.entity.Attendance;
 import com.zidio.nexushr.repository.AttendanceRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -10,6 +11,7 @@ import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/attendance")
@@ -23,32 +25,47 @@ public class AttendanceController {
         return repo.findAll(); // Admin ko sabka data dikhane ke liye
     }
     @PostMapping("/check-in/{empCode}")
-    public Attendance checkIn(@PathVariable String empCode) {
+    public ResponseEntity<?> checkIn(@PathVariable String empCode) {
         try {
-            if(repo.findByEmpCodeAndDate(empCode, LocalDate.now()).isPresent()) {
-                return null;
+            String cleanEmpCode = empCode.trim().toUpperCase();
+            if (repo.findByEmpCodeAndDate(cleanEmpCode, LocalDate.now()).isPresent()) {
+                return ResponseEntity.status(400).body("Already checked in for today.");
             }
             Attendance a = new Attendance();
-            a.setEmpCode(empCode);
+            a.setEmpCode(cleanEmpCode);
             a.setDate(LocalDate.now());
             a.setCheckInTime(LocalTime.now());
             a.setStatus("PRESENT");
             a.setTotalHours("0h 0m");
-            return repo.save(a);
+            Attendance saved = repo.save(a);
+            return ResponseEntity.ok(saved);
         } catch (Exception e) {
             e.printStackTrace();
-            throw new RuntimeException("DB Error: " + e.getMessage());
+            return ResponseEntity.status(500).body("DB Error: " + e.getMessage());
         }
     }
 
     @PutMapping("/check-out/{empCode}")
-    public Attendance checkOut(@PathVariable String empCode) {
-        Attendance a = repo.findByEmpCodeAndDate(empCode, LocalDate.now())
-                .orElseThrow(() -> new RuntimeException("No record found"));
-        a.setCheckOutTime(LocalTime.now());
-        Duration d = Duration.between(a.getCheckInTime(), a.getCheckOutTime());
-        a.setTotalHours(d.toHours() + "h " + (d.toMinutes() % 60) + "m");
-        return repo.save(a);
+    public ResponseEntity<?> checkOut(@PathVariable String empCode) {
+        try {
+            String cleanEmpCode = empCode.trim().toUpperCase();
+            Optional<Attendance> attendanceOpt = repo.findByEmpCodeAndDate(cleanEmpCode, LocalDate.now());
+            if (!attendanceOpt.isPresent()) {
+                return ResponseEntity.status(400).body("No check-in record found for today.");
+            }
+            Attendance a = attendanceOpt.get();
+            if (a.getCheckOutTime() != null) {
+                return ResponseEntity.status(400).body("Already checked out for today.");
+            }
+            a.setCheckOutTime(LocalTime.now());
+            Duration d = Duration.between(a.getCheckInTime(), a.getCheckOutTime());
+            a.setTotalHours(d.toHours() + "h " + (d.toMinutes() % 60) + "m");
+            Attendance saved = repo.save(a);
+            return ResponseEntity.ok(saved);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("DB Error: " + e.getMessage());
+        }
     }
 
     @GetMapping("/stats/{empCode}")
