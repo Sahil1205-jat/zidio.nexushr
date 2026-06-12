@@ -30,14 +30,12 @@ public class TaskController {
     @Autowired
     private EmailService emailService;
 
-    // 1. Create Task and Notify Assigned Employee
     @PostMapping
     public Task createTask(@RequestBody Task task) {
         if(task.getStatus() == null) task.setStatus("PENDING");
         Task savedTask = taskRepo.save(task);
         log.info("New task created with ID: {}", savedTask.getId());
 
-        // Notify assigned employee asynchronously
         java.util.concurrent.CompletableFuture.runAsync(() -> {
             try {
                 employeeRepo.findByEmpCode(savedTask.getAssignedTo().trim().toUpperCase())
@@ -60,21 +58,18 @@ public class TaskController {
         return savedTask;
     }
 
-    // 2. Get All Tasks (For Admin)
     @GetMapping("/all")
     public List<Task> getAllTasks() {
         log.info("Admin request for all tasks");
         return taskRepo.findAll();
     }
 
-    // 3. Get Tasks for Specific Employee
     @GetMapping("/emp/{empCode}")
     public List<Task> getMyTasks(@PathVariable String empCode) {
         log.info("Fetching tasks for employee: {}", empCode);
         return taskRepo.findAllByAssignedToIgnoreCase(empCode);
     }
 
-    // 4. Update Task Status (Employee side)
     @PatchMapping("/{id}/status")
     public ResponseEntity<Task> updateStatus(@PathVariable Long id, @RequestBody Map<String, String> statusUpdate) {
         String newStatus = statusUpdate.get("status");
@@ -93,7 +88,6 @@ public class TaskController {
                 });
     }
 
-    // 5. Delete Task
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteTask(@PathVariable Long id) {
         if (taskRepo.existsById(id)) {

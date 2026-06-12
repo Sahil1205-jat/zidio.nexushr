@@ -22,7 +22,7 @@ public class AttendanceController {
     private AttendanceRepository repo;
     @GetMapping("/all")
     public List<Attendance> getAllAttendance() {
-        return repo.findAll(); // Admin ko sabka data dikhane ke liye
+        return repo.findAll();
     }
     @PostMapping("/check-in/{empCode}")
     public ResponseEntity<?> checkIn(@PathVariable String empCode) {
@@ -73,7 +73,7 @@ public class AttendanceController {
         List<Attendance> history = repo.findByEmpCode(empCode);
         Map<String, Object> res = new HashMap<>();
         res.put("totalDays", history.size());
-        res.put("totalHours", "Calculated"); // Simplified for now
+        res.put("totalHours", "Calculated");
         res.put("history", history);
         return res;
     }

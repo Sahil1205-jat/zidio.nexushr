@@ -45,7 +45,6 @@ public class EmployeeController {
     private static final String PASSWORD_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     private static final int PASSWORD_LENGTH = 8;
 
-    // Helper method to generate a random password
     private String generateRandomPassword() {
         SecureRandom random = new SecureRandom();
         StringBuilder password = new StringBuilder(PASSWORD_LENGTH);
@@ -55,7 +54,6 @@ public class EmployeeController {
         return password.toString();
     }
 
-    // DTO for Change Password Request
     public static class ChangePasswordRequest {
         private String empCode;
         private String oldPassword;
@@ -86,7 +84,6 @@ public class EmployeeController {
         }
     }
 
-    // 1. Naya Employee Add karna + Welcome Email (Async)
     @PostMapping
     public ResponseEntity<?> addEmployee(@RequestBody Employee employee) {
         if (employee.getEmpCode() == null || employee.getEmpCode().trim().isEmpty()) {
@@ -116,8 +113,6 @@ public class EmployeeController {
         employee.setPassword(passwordEncoder.encode(randomPassword));
         Employee savedEmp = employeeRepository.save(employee);
 
-        // Execute email sending in a background worker thread
-        // This prevents the SMTP connection or server-side blocks from hanging the request thread!
         java.util.concurrent.CompletableFuture.runAsync(() -> {
             try {
                 String subject = "Your NexusHR Account Details";
@@ -148,13 +143,11 @@ public class EmployeeController {
         return ResponseEntity.ok(response);
     }
 
-    // 2. Saare Employees dekhna
     @GetMapping
     public List<Employee> getAllEmployees() {
         return employeeRepository.findAll();
     }
 
-    // Change Password
     @PostMapping("/change-password")
     public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequest request) {
         System.out.println("API: Received password change request for empCode: '" + request.getEmpCode() + "'");
@@ -178,47 +171,39 @@ public class EmployeeController {
         return ResponseEntity.ok("Password changed successfully.");
     }
 
-    // 3. Employee Delete karna (🔥 Naya Feature)
     @Transactional
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteEmployee(@PathVariable Long id) {
-        // Step 1: Find the employee to get their empCode
         Employee employee = employeeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Employee not found with id: " + id));
         String empCode = employee.getEmpCode();
 
-        // Step 2: Delete associated tasks
         List<Task> tasksToDelete = taskRepository.findAll().stream()
                 .filter(task -> task.getAssignedTo().equalsIgnoreCase(empCode))
                 .toList();
         taskRepository.deleteAll(tasksToDelete);
 
-        // Step 3: Delete associated leave records
         List<LeaveRecord> leavesToDelete = leaveRepository.findAll().stream()
                 .filter(leave -> leave.getEmpCode().equalsIgnoreCase(empCode))
                 .toList();
         leaveRepository.deleteAll(leavesToDelete);
 
-        // Step 4: Delete associated attendance records
         List<Attendance> attendanceToDelete = attendanceRepository.findAll().stream()
                 .filter(att -> att.getEmpCode().equalsIgnoreCase(empCode))
                 .toList();
         attendanceRepository.deleteAll(attendanceToDelete);
 
-        // Step 5: Delete the employee record itself
         employeeRepository.delete(employee);
 
         return ResponseEntity.ok("Employee '" + employee.getName() + "' and all associated data have been deleted.");
     }
 
-    // 4. EmpCode se search
     @GetMapping("/code/{empCode}")
     public Optional<Employee> getEmployeeByCode(@PathVariable String empCode) {
         String cleanEmpCode = empCode.trim().toUpperCase();
         return employeeRepository.findByEmpCode(cleanEmpCode);
     }
 
-    // 5. CTC Update karna
     @PutMapping("/{id}/ctc")
     public Employee updateCtc(@PathVariable Long id, @RequestBody Double ctc) {
         Employee emp = employeeRepository.findById(id)

@@ -31,7 +31,6 @@ public class PerformanceReviewService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Employee code is required.");
         }
         String empCode = review.getEmpCode().trim().toUpperCase();
-        // Check if employee exists
         if (!employeeRepo.findByEmpCode(empCode).isPresent()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Employee with code '" + empCode + "' does not exist.");
         }
@@ -42,7 +41,6 @@ public class PerformanceReviewService {
         }
         PerformanceReview saved = repository.save(review);
 
-        // Notify the employee asynchronously that a new cycle has been created
         CompletableFuture.runAsync(() -> {
             try {
                 employeeRepo.findByEmpCode(empCode).ifPresent(emp -> {
@@ -96,7 +94,6 @@ public class PerformanceReviewService {
             }
             PerformanceReview saved = repository.save(existing);
 
-            // Notify admins asynchronously if self-assessment was updated
             if (selfAssessmentUpdated) {
                 CompletableFuture.runAsync(() -> {
                     try {
@@ -126,7 +123,6 @@ public class PerformanceReviewService {
                 });
             }
 
-            // Notify employee asynchronously if manager feedback/rating was updated
             if (managerUpdated) {
                 CompletableFuture.runAsync(() -> {
                     try {

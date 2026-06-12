@@ -26,7 +26,6 @@ public class LeaveController {
     @Autowired
     private EmailService emailService;
 
-    // Leave Apply Karna
     @PostMapping
     public ResponseEntity<?> applyLeave(@RequestBody LeaveRecord leave) {
         if (leave.getEmpCode() == null || leave.getEmpCode().trim().isEmpty()) {
@@ -34,7 +33,6 @@ public class LeaveController {
         }
         
         String empCode = leave.getEmpCode().trim().toUpperCase();
-        // Check if employee exists
         if (!employeeRepo.findByEmpCode(empCode).isPresent()) {
             return ResponseEntity.badRequest().body("Employee with code '" + empCode + "' does not exist.");
         }
@@ -43,7 +41,6 @@ public class LeaveController {
         leave.setStatus("Pending"); // Default status
         LeaveRecord saved = repo.save(leave);
         
-        // Notify admins asynchronously
         CompletableFuture.runAsync(() -> {
             try {
                 String empName = employeeRepo.findByEmpCode(empCode)
@@ -75,19 +72,16 @@ public class LeaveController {
         return ResponseEntity.ok(saved);
     }
 
-    // Saari leaves dekhna (Admin ke liye)
     @GetMapping
     public List<LeaveRecord> getAllLeaves() {
         return repo.findAll();
     }
 
-    // Sirf ek employee ki leaves dekhna
     @GetMapping("/{empCode}")
     public List<LeaveRecord> getEmployeeLeaves(@PathVariable String empCode) {
         return repo.findByEmpCode(empCode);
     }
 
-    // Admin dvara Approve/Reject karna
     @PutMapping("/{id}/status")
     public ResponseEntity<?> updateStatus(@PathVariable Long id, @RequestBody String status) {
         Optional<LeaveRecord> leaveOpt = repo.findById(id);
@@ -100,7 +94,6 @@ public class LeaveController {
         leave.setStatus(cleanStatus);
         LeaveRecord saved = repo.save(leave);
         
-        // Notify the employee asynchronously
         CompletableFuture.runAsync(() -> {
             try {
                 employeeRepo.findByEmpCode(leave.getEmpCode())

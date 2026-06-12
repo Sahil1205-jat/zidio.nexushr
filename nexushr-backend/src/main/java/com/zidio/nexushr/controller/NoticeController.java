@@ -24,12 +24,10 @@ public class NoticeController {
     @Autowired
     private EmailService emailService;
 
-    // 1. Create Notice and Email All Employees
     @PostMapping
     public Notice addNotice(@RequestBody Notice notice) {
         Notice savedNotice = noticeRepo.save(notice);
 
-        // Run the email broadcast in a background worker thread
         java.util.concurrent.CompletableFuture.runAsync(() -> {
             try {
                 List<Employee> allEmployees = employeeRepo.findAll();
@@ -41,7 +39,6 @@ public class NoticeController {
                         "Check your 'Notice Board' for more info.\n\n" +
                         "Regards,\nNexusHR Management";
 
-                // Loop through all employees and send email
                 for (Employee emp : allEmployees) {
                     if (emp.getEmail() != null && !emp.getEmail().isEmpty()) {
                         emailService.sendEmail(emp.getEmail(), subject, body);
@@ -56,13 +53,11 @@ public class NoticeController {
         return savedNotice;
     }
 
-    // 2. Get All Notices for Frontend
     @GetMapping
     public List<Notice> getAllNotices() {
         return noticeRepo.findAll();
     }
 
-    // 3. Delete Notice (Optional but good to have)
     @DeleteMapping("/{id}")
     public String deleteNotice(@PathVariable Long id) {
         noticeRepo.deleteById(id);

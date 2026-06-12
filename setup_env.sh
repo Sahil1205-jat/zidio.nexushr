@@ -1,9 +1,6 @@
 #!/bin/bash
-
-# Exit on any error
 set -e
 
-# Base directory
 BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
 echo "=== 1. Updating package lists ==="
