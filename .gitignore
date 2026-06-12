@@ -23,3 +23,7 @@ nexushr-backend/.project
 backend.log
 *.log
 nohup.out
+
+# PDF Generation
+generate_pdf.py
+NexusHR_Documentation.pdf
